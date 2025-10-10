@@ -1,0 +1,65 @@
+.container {
+  max-width: 1169px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 15px;
+}
+
+#content {
+  max-height: 100vh;
+  padding-top: 100px;
+}
+
+.controls-layout {
+  display: flex;
+  justify-content: space-between;
+}
+
+.controls-layout h1 {
+  padding-left: 25px;
+}
+
+.create-btn {
+  margin: 31px 0 31px 0;
+  width: 220px;
+  text-align: center;
+}
+
+.create-btn a {
+  background-color: #512dcb;
+  color: white;
+  border-radius: 32px;
+  padding: 16px 24px;
+}
+
+a {
+  text-decoration: none;
+}
+
+.project-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0px 25px 0px 25px;
+}
+
+.right-side{
+  padding-top: 18px;
+}
+
+.date {
+  line-height: 25px;
+}
+
+.right-side a {
+  display: block;
+  width: 200px;
+  padding-top: 15px;
+}
+
+.project-detail, .project-create, .project-delete {
+  text-align: center;
+}
+
+.interact a {
+  padding-right: 20px;
+}

@@ -1,0 +1,38 @@
+{% extends "mysite/index.html" %}
+
+{% block title %}Мои проекты{% endblock %}
+
+{% block content %}
+  <div class="controls-layout">
+    <h1>Мои проекты</h1>
+    <div class="create-btn">
+      <a href="{% url 'mysite:project_create' %}">Создать</a>
+    </div>
+  </div>
+  {% for project in projects %}
+    <hr>
+
+    <div class="project-item">
+      <div class="left-side">
+        <h2>
+          <!-- <a href="{% url 'mysite:project_detail' project.id %}">
+            {{ project.title}}
+          </a> -->
+          <a href="{{ project.get_absolute_url }}">
+            {{ project.title}}
+          </a>
+        </h2>
+        <p class="date">
+          {{ project.get_status_display }} от {{ project.user }} <br>
+          Шаблон: {{ project.template }} <br>
+          Изменено: {{ project.modified }}
+        </p>
+      </div>
+
+      <div class="right-side">
+        <a href="{% url 'mysite:project_update' project.id %}">Редактировать</a><br>
+        <a href="{% url 'mysite:project_delete' project.id %}">Удалить</a>
+      </div>
+    </div>
+  {% endfor %}
+{% endblock %}

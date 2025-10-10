@@ -1,12 +1,17 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My World</title>
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static "mysite/css/base.css" %}">
   </head>
   <body>
-    <h1>Hello world!</h1>
-    <hr />
+    <div class="container">
+      <div id="content">{% block content %} {% endblock %}</div>
+      <div id="sidebar">
+    </div>
+    </div>
   </body>
 </html>

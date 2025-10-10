@@ -1,0 +1,13 @@
+{% extends "mysite/index.html" %}
+
+{% block content %}
+  <div class="project-delete">
+    <h1>Удалить проект "{{ project.title }}"?</h1>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">Удалить</button>
+      <a href="{% url 'mysite:project_list' %}">Отмена</a>
+    </form>
+  </div>
+{% endblock %}
