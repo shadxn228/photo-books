@@ -67,7 +67,7 @@ class PhotosInPagesAdmin(admin.ModelAdmin):
 
 @admin.register(Orders)
 class OrdersAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "project", "status", "total_price")
+    list_display = ("id", "user", "project", "status", "created", "modified")
     list_filter = ("status",)
     raw_id_fields = ("user",)
     search_fields = ("user__name",)

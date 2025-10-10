@@ -1,11 +1,8 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-
-class ProjectManager(models.Manager):
-    def recent(self):
-        return self.filter(created__gte=timezone.now() - timezone.timedelta(days=30))
 
 class Users(models.Model):
     name = models.CharField(max_length=255, verbose_name=_("Имя"))
@@ -31,26 +28,39 @@ class Templates(models.Model):
     def __str__(self):
         return self.name
 
+class ProcessManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(status=Projects.Status.INPROCESS)
 
 class Projects(models.Model):
-    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="projects", verbose_name=_("Пользователь"))
+
+    class Status(models.TextChoices):
+        INPROCESS = 'inprocess', 'В процессе'
+        ORDERED = 'ordered', 'Заказано'
+        ARCHIVE = 'archive', 'Архив'
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="projects", verbose_name=_("Пользователь"))
     template = models.ForeignKey(Templates, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("Шаблон"))
     title = models.CharField(max_length=255, verbose_name=_("Название проекта"))
+    status = models.CharField(max_length=50, choices=Status.choices, default="inprocess", verbose_name=_("Статус"))
     created = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
     modified = models.DateTimeField(auto_now=True, verbose_name=_("Дата изменения"))
 
-    objects = ProjectManager()
+    inprocess = ProcessManager()
 
     class Meta:
         verbose_name = _("Проект")
         verbose_name_plural = _("Проекты")
         ordering = ["-created"]
-    
+        indexes = [
+            models.Index(fields=['-created']),
+        ]
+
     def __str__(self):
         return self.title
 
     def get_absolute_url(self):
-        return reverse("project_detail", args=[str(self.id)])
+        return reverse("mysite:project_detail", args=[str(self.id)])
 
 
 class Pages(models.Model):
@@ -83,8 +93,8 @@ class Photos(models.Model):
 
 
 class PhotosInPages(models.Model):
-    page = models.ForeignKey(Pages, on_delete=models.CASCADE, related_name="photos", verbose_name=_("Страница"))
-    photo = models.ForeignKey(Photos, on_delete=models.CASCADE, related_name="pages", verbose_name=_("Фотография"))
+    page = models.ForeignKey(Pages, on_delete=models.CASCADE, related_name="photos_in_page", verbose_name=_("Страница"))
+    photo = models.ForeignKey(Photos, on_delete=models.CASCADE, related_name="photos_in_pages", verbose_name=_("Фотография"))
 
     class Meta:
         verbose_name = _("Фото на странице")
@@ -93,18 +103,22 @@ class PhotosInPages(models.Model):
     def __str__(self):
         return f"{self.photo.filename} - {self.page}"
 
-class OrderStatus(models.TextChoices):
-    NEW = 'new', 'Новый'
-    PROCESSING = 'processing', 'В обработке'
-    DONE = 'done', 'Завершён'
-    CANCELED = 'canceled', 'Отменён'
 
 class Orders(models.Model):
-    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="orders", verbose_name=_("Пользователь"))
+
+    class Status(models.TextChoices):
+        NEW = 'new', 'Новый'
+        PROCESSING = 'processing', 'В обработке'
+        DONE = 'done', 'Завершён'
+        CANCELED = 'canceled', 'Отменён'
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders", verbose_name=_("Пользователь"))
     project = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name="orders", verbose_name="Проект")
-    status = models.CharField(max_length=50, choices=OrderStatus.choices, default="new", verbose_name=_("Статус"))
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма заказа")
-    created = models.DateTimeField(default=timezone.now, verbose_name="Дата заказа")
+    status = models.CharField(max_length=50, choices=Status.choices, default="new", verbose_name=_("Статус"))
+    # total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма заказа")
+    created = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    modified = models.DateTimeField(auto_now=True, verbose_name="Дата изменения")
+    
 
     class Meta:
         verbose_name = _("Заказ")
