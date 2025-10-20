@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from datetime import timedelta
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -19,8 +20,9 @@ class Users(models.Model):
 
 class Templates(models.Model):
     name = models.CharField(max_length=255, verbose_name=_("Имя"))
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name=_("Цена"))
     description = models.TextField(blank=True, null=True, verbose_name=_("Описание"))
-
+    
     class Meta:
         verbose_name = _("Шаблон")
         verbose_name_plural = _("Шаблоны")
@@ -56,6 +58,9 @@ class Projects(models.Model):
             models.Index(fields=['-created']),
         ]
 
+    def is_expired(self):
+        return timezone.now() > self.created + timedelta(days=90)
+
     def __str__(self):
         return self.title
 
@@ -66,10 +71,9 @@ class Projects(models.Model):
 class Pages(models.Model):
     project = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name="pages", verbose_name=_("Имя проекта"))
     title = models.CharField(max_length=255, verbose_name="Название страницы", blank=True, null=True)
-    pageNumber = models.PositiveIntegerField(verbose_name=_("Номер страницы"))
-    pageCount = models.PositiveIntegerField(verbose_name=_("Количество страниц"))
+    photos = models.ManyToManyField("Photos", through="PhotosInPages", through_fields=("page", "photo"), related_name="pages", verbose_name="Фотографии")
+    pageNumber = models.PositiveIntegerField(verbose_name=_("Номер страницы"), blank=True, null=True)
     text = models.TextField(blank=True, null=True, verbose_name=_("Текст"))
-    img = models.ImageField(blank=True, null=True, verbose_name=_("Изображение"))
 
     class Meta:
         verbose_name = _("Страница проекта")
@@ -81,12 +85,16 @@ class Pages(models.Model):
 
 class Photos(models.Model):
     user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="photos", verbose_name=_("Пользователь"))
-    filename = models.CharField(max_length=255, verbose_name=_("Имя файла"))
+    filename = models.CharField(max_length=255, verbose_name=_("Имя файла"), blank=True, null=True)
     upload_date = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата загрузки"))
+    photo = models.ImageField(upload_to='photos/%Y/%m/%d/', blank=True, verbose_name=_("Изображение"))
 
     class Meta:
         verbose_name = _("Фотография")
         verbose_name_plural = _("Фотографии")
+
+    def is_old(self):
+        return self.upload_date < timezone.now() - timedelta(days=30)
     
     def __str__(self):
         return self.filename
@@ -95,10 +103,13 @@ class Photos(models.Model):
 class PhotosInPages(models.Model):
     page = models.ForeignKey(Pages, on_delete=models.CASCADE, related_name="photos_in_page", verbose_name=_("Страница"))
     photo = models.ForeignKey(Photos, on_delete=models.CASCADE, related_name="photos_in_pages", verbose_name=_("Фотография"))
+    added_at = models.DateTimeField(auto_now_add=True)
+    order = models.PositiveIntegerField(default=0, verbose_name=_("Порядок"))
 
     class Meta:
         verbose_name = _("Фото на странице")
         verbose_name_plural = _("Фотографии на страницах")
+        ordering = ['order', 'added_at']
     
     def __str__(self):
         return f"{self.photo.filename} - {self.page}"
@@ -113,12 +124,10 @@ class Orders(models.Model):
         CANCELED = 'canceled', 'Отменён'
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders", verbose_name=_("Пользователь"))
-    project = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name="orders", verbose_name="Проект")
     status = models.CharField(max_length=50, choices=Status.choices, default="new", verbose_name=_("Статус"))
-    # total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма заказа")
     created = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     modified = models.DateTimeField(auto_now=True, verbose_name="Дата изменения")
-    
+    projects = models.ManyToManyField("Projects", through='OrderItem', related_name="orders")
 
     class Meta:
         verbose_name = _("Заказ")
@@ -126,3 +135,36 @@ class Orders(models.Model):
     
     def __str__(self):
         return f"Заказ #{self.id} ({self.get_status_display()})"
+
+    def is_new(self):
+        return (timezone.now() - self.created).days < 1
+
+    @property
+    def total_sum(self):
+        return sum(item.total_price for item in self.items.all())
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Orders, on_delete=models.CASCADE, related_name="items", verbose_name="Заказ")
+    project = models.ForeignKey(Projects, on_delete=models.PROTECT, verbose_name="Проект", null=True, blank=True,)
+    template = models.ForeignKey(Templates, on_delete=models.PROTECT, verbose_name="Шаблон", editable=False, null=True, blank=True,)
+    quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена", null=True, blank=True,)
+
+    class Meta:
+        verbose_name = "Позиция заказа"
+        verbose_name_plural = "Позиции заказа"
+
+    def __str__(self):
+        return f"{self.project.title} × {self.quantity}"
+
+    def save(self, *args, **kwargs):
+        if self.project:
+            self.template = self.project.template
+            if self.template and not self.price:
+                self.price = self.template.price
+        super().save(*args, **kwargs)
+
+    @property
+    def total_price(self):
+        return self.price * self.quantity
