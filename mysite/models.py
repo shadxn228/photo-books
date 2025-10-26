@@ -4,6 +4,7 @@ from datetime import timedelta
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import AbstractUser
 
 class Users(models.Model):
     name = models.CharField(max_length=255, verbose_name=_("Имя"))
@@ -15,7 +16,7 @@ class Users(models.Model):
         verbose_name_plural = _("Пользователи")
 
     def __str__(self):
-        return self.email
+        return self.name
 
 
 class Templates(models.Model):
@@ -41,7 +42,7 @@ class Projects(models.Model):
         ORDERED = 'ordered', 'Заказано'
         ARCHIVE = 'archive', 'Архив'
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="projects", verbose_name=_("Пользователь"))
+    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="projects", verbose_name=_("Пользователь"))
     template = models.ForeignKey(Templates, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("Шаблон"))
     title = models.CharField(max_length=255, verbose_name=_("Название проекта"))
     status = models.CharField(max_length=50, choices=Status.choices, default="inprocess", verbose_name=_("Статус"))
@@ -49,6 +50,7 @@ class Projects(models.Model):
     modified = models.DateTimeField(auto_now=True, verbose_name=_("Дата изменения"))
 
     inprocess = ProcessManager()
+    objects = models.Manager()
 
     class Meta:
         verbose_name = _("Проект")
@@ -65,7 +67,7 @@ class Projects(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse("mysite:project_detail", args=[str(self.id)])
+        return reverse("main:project_detail", args=[str(self.id)])
 
 
 class Pages(models.Model):
@@ -123,7 +125,7 @@ class Orders(models.Model):
         DONE = 'done', 'Завершён'
         CANCELED = 'canceled', 'Отменён'
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders", verbose_name=_("Пользователь"))
+    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="orders", verbose_name=_("Пользователь"))
     status = models.CharField(max_length=50, choices=Status.choices, default="new", verbose_name=_("Статус"))
     created = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     modified = models.DateTimeField(auto_now=True, verbose_name="Дата изменения")
@@ -146,7 +148,7 @@ class Orders(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Orders, on_delete=models.CASCADE, related_name="items", verbose_name="Заказ")
-    project = models.ForeignKey(Projects, on_delete=models.PROTECT, verbose_name="Проект", null=True, blank=True,)
+    project = models.ForeignKey(Projects, on_delete=models.SET_NULL, verbose_name="Проект", null=True, blank=True,)
     template = models.ForeignKey(Templates, on_delete=models.PROTECT, verbose_name="Шаблон", editable=False, null=True, blank=True,)
     quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена", null=True, blank=True,)

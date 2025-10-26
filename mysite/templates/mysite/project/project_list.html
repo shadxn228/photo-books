@@ -15,12 +15,12 @@
     <div class="project-item">
       <div class="left-side">
         <h2>
-          <!-- <a href="{% url 'mysite:project_detail' project.id %}">
-            {{ project.title}}
-          </a> -->
-          <a href="{{ project.get_absolute_url }}">
+          <a href="{% url 'mysite:project_detail' project.id %}">
             {{ project.title}}
           </a>
+          <!-- <a href="{{ project.get_absolute_url }}">
+            {{ project.title}}
+          </a> -->
         </h2>
         <p class="date">
           {{ project.get_status_display }} от {{ project.user }} <br>

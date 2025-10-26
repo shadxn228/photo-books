@@ -2,9 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.db.models import Count, Avg, Max, Sum
 from django.http import Http404
+from django.contrib import messages
 
 from .models import Projects, Orders, Users, Pages
-from .forms import ProjectForm, PhotoForm
+from .forms import ProjectForm
 
 
 # Create your views here.
@@ -21,19 +22,24 @@ def project_create(request):
     if request.method == "POST":
         form = ProjectForm(request.POST)
         if form.is_valid():
-          project = form.save(commit=False)
-          project.user = request.user
-          project.save()  
+            project = form.save(commit=False)
+            project.user = request.user
 
-          for i in range(1, 4):
-              Pages.objects.create(
-                  project=project,
-                  pageNumber=i,
-                  pageCount=i-1,
-                  title=f"Страница {i}"
-              )
+            existing_count = Projects.inprocess.filter(user=request.user).count()
+            if existing_count >= 7:
+                messages.warning(request, "Вы достигли лимита проектов.")
+                return redirect("mysite:project_list")
 
-          return redirect("mysite:project_list")
+            project.save()  
+
+            for i in range(1, 4):
+                Pages.objects.create(
+                    project=project,
+                    pageNumber=i,
+                    title=f"Страница {i}"
+                )
+
+            return redirect("mysite:project_list")
     else:
         form = ProjectForm()
 
@@ -46,7 +52,10 @@ def project_update(request, id):
         form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
             form.save()
-            return redirect("mysite:project_detail", id=project.id)
+
+            Pages.modified.filter(project=project).update(text="Обновлено при редактировании проекта")
+
+            return redirect("mysite:project_detail", id=pкеш-фреймворкаroject.id)
     else:
         form = ProjectForm(instance=project)
     return render(request, "mysite/project/project_form.html", {"form": form})
@@ -68,4 +77,7 @@ def upload_photo(request):
             return redirect('photo_list')
     else:
         form = PhotoForm()
+
+    photo_names = Photos.objects.values_list('filename', flat=True)
+
     return render(request, 'mysite/photo/upload.html', {'form': form})
