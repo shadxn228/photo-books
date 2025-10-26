@@ -1,0 +1,38 @@
+{% extends "main/default.html" %}
+{% load static %}
+
+{% block title %}Мои проекты{% endblock %}
+
+{% block content %}
+  <header>
+    <div class="flex">
+      <h1>Мои проекты</h1>
+      <ul class="actions">
+        <li><a href="{% url 'main:project_create' %}" class="button">Создать</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="tiles">
+    {% for project in projects %}
+    <article class="style{{ forloop.counter }}">
+      <span class="image">
+        {% if project.cover_image %}
+          <img src="{{ project.cover_image.url }}" alt="{{ project.title }}" />
+        {% else %}
+          <img src="{% static 'images/pic' %}{{ forloop.counter }}.jpg" alt="" />
+        {% endif %}
+      </span>
+      <a href="{{ project.get_absolute_url }}">
+        <h2>{{ project.title }}</h2>
+        <div class="content">
+          Шаблон: {{ project.template }} <br>
+          Статус: {{ project.get_status_display }} <br>
+          Создан: {{ project.created|date:"d.m.Y H:i" }}
+        </div>
+      </a>
+    </article>
+  {% endfor %}
+  </section>
+
+{% endblock %}

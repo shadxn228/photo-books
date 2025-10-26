@@ -1,0 +1,38 @@
+{% extends "main/default.html" %} 
+{% load static %}
+
+{% block title %}{{ project.title }}{%endblock%} 
+
+{% block content %}
+  <header>
+    <h1>{{ project.title }}</h1>
+  </header>
+  <p>
+    <strong>Статус:</strong> {{ project.get_status_display }} <br>
+    <strong>Создан:</strong> {{ project.created }} <br>
+    <strong>Обновлено:</strong> {{ project.modified }}
+  </p>
+  
+  <h2>Фотографии проекта</h2>
+  <section class="tiles">
+  {% for page in project.pages.all %}
+  {% for photo_in_page in page.photos_in_page.all %}
+    <article>
+        <span class="image">
+            <img src="{{ photo_in_page.photo.photo.url }}" alt="">
+        </span>
+        <p></p>
+        <a href="#">
+          <h2>{{ photo_in_page.photo.filename }}</h2>
+        </a>
+    </article>
+    {% endfor %}
+  {% endfor %}
+  </section>
+
+  <ul class="actions">
+    <li><a href="{% url 'main:project_form' project.pk %}" class="button primary">Редактировать</a></li>
+    <li><a href="{% url 'main:project_list' %}" class="button">Отмена</a></li>
+    <li><a href="{% url 'main:project_delete' project.pk %}" class="button">Удалить</a></li>
+  </ul>
+{% endblock %}

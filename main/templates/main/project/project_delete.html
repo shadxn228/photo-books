@@ -1,0 +1,17 @@
+{% extends "main/default.html" %} 
+{% load static %}
+
+{% block content %}
+  <h2>Удалить проект "{{ project.title }}"?</h2>
+  <form method="post">
+    {% csrf_token %}
+    <ul class="actions">
+      <li><input type="submit" value="Удалить" class="primary" /></li>
+      <li>
+        <ul class="actions">
+          <li><a href="{% url 'main:project_detail' project.pk %}" class="button">Отмена</a></li>
+        </ul>
+      </li>
+    </ul>
+  </form>
+{% endblock %}

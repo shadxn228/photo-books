@@ -1,0 +1,22 @@
+{% extends "main/default.html" %} 
+{% load static %}
+
+{% block content %}
+
+  <h2>{{ title }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="col-12">
+      <ul class="actions">
+          <li><input type="submit" value="Сохранить" class="primary" /></li>
+          <li>
+            <ul class="actions">
+              <li><a href="{% url 'main:project_list'%}" class="button">Отмена</a></li>
+            </ul>
+          </li>
+      </ul>
+    </div>
+  </form>
+
+{% endblock %}

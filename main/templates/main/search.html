@@ -1,0 +1,57 @@
+{% extends "main/base.html" %}
+{% load static %}
+{% block content %}
+
+<header>
+  <h2>Поиск</h2>
+  <p>Найдите проект по названию или шаблону</p>
+</header>
+
+<section>
+  <form method="get" action="{% url 'main:search' %}">
+    <div class="row gtr-uniform">
+      <div class="col-12">
+        <input type="text" name="query" id="query" value="{{ request.GET.query }}" placeholder="Поиск" autocomplete="off"/>
+      </div>
+      <div class="col-12">
+        <ul class="actions">
+          <li><input type="submit" value="Найти" class="primary" /></li>
+          <li><input type="reset" value="Очистить" /></li>
+        </ul>
+      </div>
+    </div>
+  </form>
+
+  {% if query %}
+    <h3>Результаты поиска по запросу "{{ query }}"</h3>
+    {% if results %}
+      <div class="posts">
+        <section class="tiles">
+          {% for project in results %}
+          <article class="style{{ forloop.counter }}">
+            <span class="image">
+              {% if project.cover_image %}
+                <img src="{{ project.cover_image.url }}" alt="{{ project.title }}" />
+              {% else %}
+                <img src="{% static 'images/pic' %}{{ forloop.counter }}.jpg" alt="" />
+              {% endif %}
+            </span>
+            <a href="#">
+              <h2>{{ project.title }}</h2>
+              <div class="content">
+                Шаблон: {{ project.template }} <br>
+                Статус: {{ project.get_status_display }} <br>
+                Создан: {{ project.created|date:"d.m.Y H:i" }}
+              </div>
+            </a>
+          </article>
+        {% endfor %}
+        </section>
+      </div>
+    {% else %}
+      <p>Ничего не найдено.</p>
+    {% endif %}
+  {% endif %}
+</section>
+
+{% endblock %}
