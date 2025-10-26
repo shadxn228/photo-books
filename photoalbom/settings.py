@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    'main',
     'mysite'
 ]
 
@@ -105,6 +105,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# LOGIN_REDIRECT_URL = 'main:home'   # куда перенаправлять после входа
+# LOGOUT_REDIRECT_URL = 'main:home'  # куда после выхода
+# LOGIN_URL = '/accounts/login/'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -127,7 +134,7 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',  # если есть общая папка static в корне проекта
 ]
 
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
