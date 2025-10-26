@@ -1,5 +1,8 @@
 from django.contrib import admin
+from django.http import HttpResponse
 from .models import Users, Templates, Projects, Pages, Photos, PhotosInPages, Orders, OrderItem
+from django.template.loader import render_to_string
+from weasyprint import HTML
 
 
 @admin.register(Users)
@@ -54,10 +57,22 @@ class ProjectsAdmin(admin.ModelAdmin):
     date_hierarchy = "created"
     inlines = [PagesInline]
     list_display_links = ("id", "title")
+    actions = ['download_pdf']
 
     @admin.display(description="Страниц")
     def page_count(self, obj):
         return obj.pages.count()
+
+    @admin.action(description="Скачать PDF")
+    def download_pdf(self, request, queryset):
+        html_string = render_to_string('mysite/project/pdf.html', {'projects': queryset})
+
+        html = HTML(string=html_string)
+        pdf_file = html.write_pdf()
+
+        response = HttpResponse(pdf_file, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="projects_report.pdf"'
+        return response
 
 
 @admin.register(Pages)
